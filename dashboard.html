@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPC Educational Simulator</title>
+  <style>
+    /* Clean, Friendly Educational Theme */
+    :root {
+      --bg-color: #f7f9fa;
+      --surface-color: #ffffff;
+      --text-main: #333333;
+      --text-muted: #666666;
+      --border-color: #e1e4e8;
+      --primary: #0366d6;
+      --primary-hover: #005cc5;
+      --process-a: #2ea043;
+      --process-b: #6f42c1;
+      --security: #d73a49;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ───── HEADER ───── */
+    header {
+      background-color: var(--surface-color);
+      padding: 16px 40px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .app-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .badge {
+      background: #f1f8ff;
+      color: var(--primary);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* ───── LOGIN OVERLAY ───── */
+    #login-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .login-card {
+      background: var(--surface-color);
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-hover);
+      width: 440px;
+      text-align: center;
+    }
+
+    .login-card h2 {
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .login-card p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: 0.2s;
+      margin-bottom: 12px;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.3);
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    /* ───── MAIN CONTENT ───── */
+    main {
+      flex: 1;
+      padding: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      display: none;
+    }
+
+    /* ───── SECURITY DEMONSTRATOR ───── */
+    .security-panel {
+      background: #fff5f5;
+      border: 1px solid #ffbcba;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 40px;
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .sec-icon {
+      background: var(--security);
+      color: white;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .sec-content h3 {
+      color: var(--security);
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .sec-content p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .code-block {
+      background: #24292e;
+      color: #e1e4e8;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    /* ───── IPC SIMULATOR SECTIONS ───── */
+    .ipc-section {
+      background: var(--surface-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin-bottom: 40px;
+      overflow: hidden;
+    }
+
+    .ipc-header {
+      background: #f6f8fa;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ipc-header h3 {
+      font-size: 18px;
+      color: var(--text-main);
+    }
+
+    .help-badge {
+      font-size: 12px;
+      background: white;
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 12px;
+      cursor: help;
+    }
+
+    .simulator-canvas {
+      display: flex;
+      align-items: stretch;
+      min-height: 300px;
+    }
+
+    .process-box {
+      flex: 1;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pb-title {
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pb-title.a {
+      color: var(--process-a);
+    }
+
+    .pb-title.b {
+      color: var(--process-b);
+    }
+
+    .bridge {
+      width: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #fafbfc;
+      border-left: 1px dashed var(--border-color);
+      border-right: 1px dashed var(--border-color);
+      position: relative;
+    }
+
+    .bridge-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    /* Animations */
+    .arrow-container {
+      width: 100%;
+      height: 2px;
+      background: var(--border-color);
+      position: relative;
+      margin: 20px 0;
+    }
+
+    .packet {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      top: -5px;
+      left: 0;
+      opacity: 0;
+    }
+
+    @keyframes sendPacket {
+      0% {
+        left: 0;
+        opacity: 1;
+      }
+
+      90% {
+        left: 100%;
+        opacity: 1;
+      }
+
+      100% {
+        left: 100%;
+        opacity: 0;
+      }
+    }
+
+    .packet.animate {
+      animation: sendPacket 1s ease-in-out;
+    }
+
+    /* Lists & Output */
+    .output-console {
+      background: #24292e;
+      color: #85e89d;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+      height: 150px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      margin-top: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOGIN SIMULATOR -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <h2>Educational Framework Login</h2>
+      <p>Please enter the secure assignment token to unlock the IPC testing simulator.</p>
+      <input type="password" id="master-key" placeholder="Check token.txt file">
+      <button style="width: 100%" onclick="login()">Authenticate Session</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="app-title">IPC Simulator & Demonstrator</div>
+    <div class="badge">Visual Mode Active</div>
+  </header>
+
+  <main id="main-content">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+      <p style="font-size: 16px; color: var(--text-muted);">Interactive demonstrator for Named Pipes, Message Queues,
+        and Shared Memory.</p>
+      <button onclick="startServices()">[ 1 ] Initialize OS Backends First</button>
+    </div>
+
+    <!-- SECURITY CENTER -->
+    <div class="security-panel">
+      <div class="sec-icon">🛡️</div>
+      <div class="sec-content" style="flex:1;">
+        <h3>Windows Kernel Security (DACL Validator)</h3>
+        <p>This project uses real OS-level security descriptors (not just web passwords). The backend has applied a
+          strict Discretionary Access Control List (DACL) that restricts IPC access entirely to authorized OS users
+          (Administrators, Local System, Interactive User).</p>
+        <div class="code-block">SECURITY_DESCRIPTOR SDDL:<br>"D:(A;;GA;;;BA)(A;;GA;;;SY)(A;;GA;;;CU)"</div>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <button style="background:var(--security);" onclick="testSecurity()">Simulate Unauthorized Access
+            Attempt</button>
+          <div id="sec-result" style="font-family:monospace; font-weight:600; color:var(--security);"></div>
+          <button id="auth-btn" style="display:none; background:#ffc107; color:#333; font-weight:700;"
+            onclick="reqPermission()">Request Interactive OS Dialog</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIMULATOR: NAMED PIPES -->
+    <div class="ipc-section">
+      <div class="ipc-header" style="flex-direction:column; align-items:flex-start;">
+        <h3>1. Named Pipe (1-to-1 Duplex Stream)</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">
+          <strong>Real World Use Case:</strong> Client-Server architectures (like a web browser talking to a local database system). Named pipes act like a physical wire connecting exactly two processes. Data is guaranteed to arrive in the exact order it was sent without corruption.
+        </p>
+      </div>
+      <div class="simulator-canvas">
+
+        <div class="process-box">
+          <div class="pb-title a"><span>📦</span> Process A (Client)</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Injects data linearly into the pipe
+            stream.</p>
+          <input type="text" id="pipeIn" placeholder="Type data payload...">
+          <button style="background:var(--process-a);" onclick="sendPipe()">Inject into Pipe →</button>
+        </div>
+
+        <div class="bridge">
+          <div class="bridge-label">\\.\pipe\<br>secure_pipe_1</div>
+          <div class="arrow-container">
+            <div class="packet" id="pipe-pkt"></div>
+          </div>
+        </div>
+
+        <div class="process-box">
+          <div class="pb-title b"><span>🖥️</span> Process B (Server)</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Listens asynchronously to the pipe
+            stream.</p>
+          <button style="background:var(--process-b); margin-bottom: 12px;" onclick="recvPipe()">Check OS Pipe
+            Buffer</button>
+          <div class="output-console" id="pipeOut">Awaiting data...</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SIMULATOR: MESSAGE QUEUE -->
+    <div class="ipc-section" style="border-top: 4px solid var(--primary);">
+      <div class="ipc-header" style="flex-direction:column; align-items:flex-start;">
+        <h3>2. Message Queue (Mailslot: One-to-Many Broadcast)</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">
+          <strong>How Both Sides Work (One Publisher, Many Consumers):</strong> Mailslots allow a publisher to throw messages into an OS-managed queue without waiting for anyone to read them (Non-blocking). In the real world, this is used for System Event Logging or diagnostic ticketing—one service announces "System booting up" and multiple diagnostic listeners can independently read from the queue when they are ready.
+        </p>
+      </div>
+      <div class="simulator-canvas">
+
+        <div class="process-box">
+          <div class="pb-title a"><span>📢</span> Publisher Service</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Broadcasts events onto the queue
+            independently.</p>
+          <input type="text" id="queueIn" placeholder="Type event description...">
+          <button style="background:var(--process-a);" onclick="sendQueue()">Publish Broadcast →</button>
+        </div>
+
+        <div class="bridge">
+          <div class="bridge-label">\\.\mailslot\<br>secure_queue</div>
+          <div class="arrow-container">
+            <div class="packet" id="queue-pkt"></div>
+          </div>
+        </div>
+
+        <div class="process-box">
+          <div class="pb-title b"><span>🖥️</span> Listener Threads (Consumers)</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Multiple listeners can pull events off the queue asynchronously.</p>
+          <button style="background:var(--process-b); margin-bottom: 12px;" onclick="recvQueue()">Consumer 1: Dequeue Task</button>
+          <button style="background:#4b2781; margin-bottom: 12px;" onclick="recvQueue()">Consumer 2: Dequeue Task</button>
+          <div class="output-console" id="queueOut">Queue empty...</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SIMULATOR: SHARED MEMORY -->
+    <div class="ipc-section">
+      <div class="ipc-header" style="flex-direction:column; align-items:flex-start;">
+        <h3>3. OS Shared Memory (Zero-Copy Interlocked Spinlock)</h3>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">
+          <strong>Real World Use Case:</strong> High-performance Video Games or Stock Trading algorithms. By using `CreateFileMapping`, two entirely different apps literally look at the exact same physical piece of RAM simultaneously. This is the **fastest IPC method possible** because no data is actually copied across boundaries.
+        </p>
+      </div>
+      <div class="simulator-canvas">
+
+        <div class="process-box">
+          <div class="pb-title a"><span>📦</span> Process A (Memory Writer)</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Locks the memory address using an Interlocked Spinlock to modify data without collisions.</p>
+          <input type="text" id="shmIn" placeholder="Type memory contents...">
+          <button style="background:var(--process-a);" onclick="writeShm()">Mutate Memory Location</button>
+        </div>
+
+        <div class="bridge" style="background:#fff3cd; border-color:#ffeeba;">
+          <div class="bridge-label" style="color:#856404;">SHARED RAM<br>(Fastest)</div>
+          <div style="font-size:24px; color:#856404;">💾</div>
+        </div>
+
+        <div class="process-box">
+          <div class="pb-title b"><span>🖥️</span> Process B (Memory Reader)</div>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Reads instantly from the shared
+            physical memory location blocks.</p>
+          <button style="background:var(--process-b); margin-bottom: 12px;" onclick="readShm()">Dump Memory Address
+            Data</button>
+          <div class="output-console" id="shmOut">Unknown...</div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let sessionToken = "";
+
+    function pop(id) {
+      const el = document.getElementById(id);
+      el.classList.remove('animate');
+      void el.offsetWidth; // trigger reflow
+      el.classList.add('animate');
+    }
+
+    function logTo(id, text) {
+      const box = document.getElementById(id);
+      box.textContent = `> ${text}\n` + box.textContent;
+    }
+
+    // ── HTTP HELPER
+    async function API(url, bodyData = null) {
+      try {
+        const opts = { method: bodyData ? 'POST' : 'GET' };
+        if (bodyData) {
+          opts.headers = { 'Content-Type': 'application/json' };
+          opts.body = JSON.stringify(bodyData);
+        }
+        const res = await fetch('http://localhost:8080' + url, opts);
+        return await res.json();
+      } catch (e) {
+        alert("API call failed."); return null;
+      }
+    }
+
+    // ── LOGIN / AUTH
+    async function login() {
+      const val = document.getElementById('master-key').value;
+      if (!val) return alert('Please enter token.');
+
+      const res = await API('/api/auth', { master: val });
+      if (res && res.token) {
+        sessionToken = res.token;
+        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+      } else {
+        alert("Authentication failed.");
+      }
+    }
+
+    // ── SERVICES INIT
+    async function startServices() {
+      await API('/api/start_services', {});
+      await API('/api/shm/init', { token: sessionToken });
+      alert("Success: All OS Services dynamically created via C++ backend.");
+    }
+
+    // ── SECURITY TEST
+    async function testSecurity() {
+      const secRes = document.getElementById('sec-result');
+      const authBtn = document.getElementById('auth-btn');
+      authBtn.style.display = 'none';
+      secRes.style.color = 'var(--security)';
+      secRes.textContent = "Requesting kernel hack attempt...";
+
+      const res = await API('/api/test_unauthorized');
+      if (res && res.error_msg) {
+        secRes.textContent = `OS Response: [${res.error_code}] ${res.error_msg}`;
+        if (res.error_code === 5 || res.error_code === 2) {
+          authBtn.style.display = 'block'; // Trigger permission override prompt
+        }
+      }
+    }
+
+    async function reqPermission() {
+      const secRes = document.getElementById('sec-result');
+      document.getElementById('auth-btn').style.display = 'none';
+      secRes.textContent = "Please check your desktop for Native Windows Dialog...";
+
+      const res = await API('/api/authorize_access');
+      if (res) {
+        if (res.granted) {
+          secRes.style.color = 'var(--process-a)';
+          secRes.textContent = "✅ SUCCESS: " + res.msg;
+        } else {
+          secRes.style.color = 'var(--security)';
+          secRes.textContent = "❌ REJECTED: " + res.msg;
+        }
+      }
+    }
+
+    // ── NAMED PIPE
+    async function sendPipe() {
+      const val = document.getElementById('pipeIn').value; if (!val) return;
+      pop('pipe-pkt');
+      const res = await API('/api/pipe/send', { token: sessionToken, message: val });
+      if (res && res.success) document.getElementById('pipeIn').value = '';
+    }
+    async function recvPipe() {
+      const res = await API('/api/pipe/receive', { token: sessionToken });
+      if (res && res.message) logTo('pipeOut', res.message);
+      else logTo('pipeOut', "(Buffer empty)");
+    }
+
+    // ── MESSAGE QUEUE
+    async function sendQueue() {
+      const val = document.getElementById('queueIn').value; if (!val) return;
+      pop('queue-pkt');
+      const res = await API('/api/queue/send', { token: sessionToken, message: val });
+      if (res && res.success) document.getElementById('queueIn').value = '';
+    }
+    async function recvQueue() {
+      const res = await API('/api/queue/receive', { token: sessionToken });
+      if (res && res.message) logTo('queueOut', res.message);
+      else logTo('queueOut', "(Queue empty)");
+    }
+
+    // ── SHARED MEMORY
+    async function writeShm() {
+      const val = document.getElementById('shmIn').value; if (!val) return;
+      const res = await API('/api/shm/write', { token: sessionToken, data: val });
+      if (res && res.success) {
+        document.getElementById('shmIn').value = '';
+        logTo('shmOut', "(Address memory mutated - you must Read it to see changes)");
+      }
+    }
+    async function readShm() {
+      const res = await API('/api/shm/read', { token: sessionToken });
+      if (res && res.data) logTo('shmOut', res.data);
+      else logTo('shmOut', "(Uninitialized)");
+    }
+
+  </script>
+</body>
+
+</html>
