@@ -4,44 +4,44 @@
 #include <shellapi.h>
 
 int main() {
-    // Console visual banner
     printf("\n");
-    printf("  ======================================================\n");
-    printf("     IPC FRAMEWORK NODE — C++17 / Native Windows API    \n");
-    printf("  ======================================================\n");
-    printf("   [+] Named Pipes   (Threaded listener, Duplex)\n");
-    printf("   [+] Mailslot      (Message Queues, Priority)\n");
-    printf("   [+] Shared Memory (File Mapping, Spinlock sync)\n");
-    printf("  ------------------------------------------------------\n\n");
+    printf("  +==================================================+\n");
+    printf("  |  IPC FRAMEWORK  v1.0  --  C++17 / WinAPI        |\n");
+    printf("  |  Named Pipes  |  Mailslots  |  Shared Memory     |\n");
+    printf("  |  OS DACL Security  |  Winsock2 HTTP Server       |\n");
+    printf("  +==================================================+\n\n");
 
-    // Secure generation of master token
-    gMasterToken = Crypto::generateToken(16);
-    
-    // Save to file for easy copy/paste and automated testing scripts
-    FILE* tf = fopen("token.txt", "w");
-    if (tf) {
-        fprintf(tf, "%s", gMasterToken.c_str());
-        fclose(tf);
-    }
+    // Fixed access key — pre-authorized as active session
+    gMasterToken = "IPC2026SECURE";
+    gACL.grantToken("IPC2026SECURE");
 
-    printf("  >> MASTER TOKEN : %s\n", gMasterToken.c_str());
-    printf("     (Also saved to token.txt in working directory)\n\n");
-    printf("  >> DASHBOARD    : http://localhost:8080\n");
-    printf("     Starting HTTP API Server...\n");
+    // Boot all IPC channels immediately
+    gPipe.createServer("secure_pipe_1");
+    gMQ.createServer("secure_queue_1");
+    gShm.create("OS_SECURE_SHM", "IPC2026SECURE");
 
-    gLog.add("INFO", "IPC Framework Boot Sequence Started");
-    gLog.add("SECURITY", "Master token generated (16-byte cryptographically secure)");
+    gLog.add("INFO",     "IPC Framework v1.0 — Boot sequence complete");
+    gLog.add("INFO",     "Named Pipe initialized: \\\\.\\pipe\\secure_pipe_1");
+    gLog.add("INFO",     "Mailslot Queue initialized: \\\\.\\mailslot\\secure_queue_1");
+    gLog.add("INFO",     "Shared Memory mapped: OS_SECURE_SHM (4 KB)");
+    gLog.add("SECURITY", "DACL applied — D:(A;;GA;;;BA)(A;;GA;;;SY)(A;;GA;;;CU)");
+    gLog.add("SECURITY", "Access key pre-authorized. Session active.");
+
+    printf("  [+] Named Pipe   : \\\\.\\pipe\\secure_pipe_1  [READY]\n");
+    printf("  [+] Mailslot     : \\\\.\\mailslot\\secure_queue_1  [READY]\n");
+    printf("  [+] Shared Mem   : OS_SECURE_SHM  [READY]\n");
+    printf("  [+] DACL Security: Active on all IPC objects\n\n");
+    printf("  >> ACCESS KEY : IPC2026SECURE\n");
+    printf("  >> DASHBOARD  : http://localhost:8080\n\n");
 
     HttpServer srv;
     if (!srv.start(8080)) {
-        printf("\n  [FATAL] Failed to bind port 8080. Is another instance running?\n");
+        printf("  [FATAL] Cannot bind port 8080. Another instance may be running.\n");
         return 1;
     }
 
-    // Auto-launch browser
-    gLog.add("INFO", "Launching browser UI -> http://localhost:8080");
+    gLog.add("INFO", "HTTP server listening on 0.0.0.0:8080");
     ShellExecuteA(0, 0, "http://localhost:8080", 0, 0, SW_SHOW);
-
     srv.run();
     return 0;
 }
