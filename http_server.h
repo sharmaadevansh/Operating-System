@@ -298,3 +298,5 @@ public:
 private:
     SOCKET sock_=INVALID_SOCKET;
 };
+
+// API Endpoints stabilized
