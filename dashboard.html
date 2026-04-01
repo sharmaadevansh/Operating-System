@@ -1,613 +1,1810 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPC Educational Simulator</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>IPC Framework — System Monitor</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
   <style>
-    /* Clean, Friendly Educational Theme */
-    :root {
-      --bg-color: #f7f9fa;
-      --surface-color: #ffffff;
-      --text-main: #333333;
-      --text-muted: #666666;
-      --border-color: #e1e4e8;
-      --primary: #0366d6;
-      --primary-hover: #005cc5;
-      --process-a: #2ea043;
-      --process-b: #6f42c1;
-      --security: #d73a49;
-      --shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
-    }
-
-    * {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
       margin: 0;
-      padding: 0;
+      padding: 0
+    }
+
+    :root {
+      --bg: #0a0f1e;
+      --sidebar: #0d1424;
+      --card: #111827;
+      --card2: #161e30;
+      --border: rgba(255, 255, 255, 0.07);
+      --accent: #0099cc;
+      --accent-glow: rgba(0, 153, 204, 0.13);
+      --purple: #6366f1;
+      --purple-glow: rgba(99, 102, 241, 0.13);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.13);
+      --yellow: #d97706;
+      --yellow-glow: rgba(217, 119, 6, 0.13);
+      --red: #dc2626;
+      --red-glow: rgba(220, 38, 38, 0.13);
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --mono: 'JetBrains Mono', monospace;
+      --shadow: none;
+      --inp-bg: rgba(0, 0, 0, 0.3);
+      --flow-bg: rgba(0, 0, 0, 0.25);
+      --mem-bg: rgba(0, 0, 0, 0.35);
+      --sec-bg: rgba(0, 0, 0, 0.3);
+      --sddl-bg: rgba(0, 0, 0, 0.35);
+      --srow-bg: rgba(0, 0, 0, 0.2);
+      --log-bg: rgba(0, 0, 0, 0.25);
+      --queue-bg: rgba(0, 0, 0, 0.25);
+      --msg-bg: rgba(0, 0, 0, 0.25)
+    }
+
+    /* ── LIGHT MODE ── */
+    body.light {
+      --bg: #f0f4f8;
+      --sidebar: #ffffff;
+      --card: #ffffff;
+      --card2: #f8fafc;
+      --border: rgba(0, 0, 0, 0.09);
+      --text: #1e293b;
+      --muted: #64748b;
+      --shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      --inp-bg: #ffffff;
+      --flow-bg: #f1f5f9;
+      --mem-bg: #f8fafc;
+      --sec-bg: #f8fafc;
+      --sddl-bg: #fefce8;
+      --srow-bg: #f8fafc;
+      --log-bg: #f8fafc;
+      --queue-bg: #f8fafc;
+      --msg-bg: #f8fafc
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
+      transition: background .25s, color .25s
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      overflow: hidden;
+      transition: background .25s, color .25s
     }
 
-    /* ───── HEADER ───── */
-    header {
-      background-color: var(--surface-color);
-      padding: 16px 40px;
-      border-bottom: 1px solid var(--border-color);
+    /* ── TOP BAR ── */
+    .topbar {
+      background: var(--sidebar);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 54px;
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 16px;
+      flex-shrink: 0
     }
 
-    .app-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--primary);
+    .top-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px
     }
 
-    .badge {
-      background: #f1f8ff;
-      color: var(--primary);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    /* ───── LOGIN OVERLAY ───── */
-    #login-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
+    .top-logo-ico {
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 7px;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      font-size: 15px;
+      flex-shrink: 0;
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.2)
     }
 
-    .login-card {
-      background: var(--surface-color);
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: var(--shadow-hover);
-      width: 440px;
-      text-align: center;
-    }
-
-    .login-card h2 {
-      margin-bottom: 12px;
+    .top-logo-name {
+      font-size: .92rem;
       font-weight: 700;
+      letter-spacing: -.02em
     }
 
-    .login-card p {
-      color: var(--text-muted);
-      font-size: 14px;
-      margin-bottom: 24px;
-      line-height: 1.5;
+    .top-logo-ver {
+      font-size: .62rem;
+      color: var(--muted);
+      letter-spacing: .04em
     }
 
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      font-size: 14px;
-      outline: none;
-      transition: 0.2s;
-      margin-bottom: 12px;
+    .top-sep {
+      width: 1px;
+      height: 26px;
+      background: var(--border)
     }
 
-    input[type="text"]:focus,
-    input[type="password"]:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.3);
+    .top-info {
+      display: flex;
+      gap: 20px;
+      font-size: .7rem;
+      color: var(--muted)
     }
 
-    button {
-      background-color: var(--primary);
-      color: white;
+    .top-info span {
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .top-info .v {
+      font-family: var(--mono);
+      color: #94a3b8;
+      font-size: .68rem
+    }
+
+    .top-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--green-glow);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: .68rem;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: .06em;
+      text-transform: uppercase
+    }
+
+    .sdot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: blink 2s infinite
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, .5)
+      }
+
+      50% {
+        opacity: .7;
+        box-shadow: 0 0 0 4px rgba(52, 211, 153, 0)
+      }
+    }
+
+    .top-uptime {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--muted)
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 200px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0
+    }
+
+    .sidebar-label {
+      font-size: .58rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 16px 16px 6px
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
       border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-size: 14px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: .78rem;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      border-left: 3px solid transparent;
+      transition: all .15s
+    }
+
+    .nav-btn .ico {
+      font-size: 1rem;
+      flex-shrink: 0
+    }
+
+    .nav-btn:hover {
+      background: rgba(0, 0, 0, .04);
+      color: var(--text)
+    }
+
+    .nav-btn.active {
+      background: rgba(0, 212, 255, .07);
+      color: var(--accent);
+      border-left-color: var(--accent);
+      font-weight: 600
+    }
+
+    .nav-btn.active.p {
+      background: var(--purple-glow);
+      color: var(--purple);
+      border-left-color: var(--purple)
+    }
+
+    .nav-btn.active.g {
+      background: var(--green-glow);
+      color: var(--green);
+      border-left-color: var(--green)
+    }
+
+    .nav-btn.active.y {
+      background: var(--yellow-glow);
+      color: var(--yellow);
+      border-left-color: var(--yellow)
+    }
+
+    .nav-btn.active.r {
+      background: var(--red-glow);
+      color: var(--red);
+      border-left-color: var(--red)
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: .6rem;
+      background: rgba(255, 255, 255, .07);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--muted)
+    }
+
+    .nav-badge.on {
+      background: var(--green-glow);
+      color: var(--green)
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border)
+    }
+
+    .key-box {
+      background: rgba(0, 0, 0, .3);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px 10px
+    }
+
+    .key-lbl {
+      font-size: .58rem;
+      color: var(--muted);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 3px
+    }
+
+    .key-val {
+      font-family: var(--mono);
+      font-size: .68rem;
+      color: var(--green);
+      word-break: break-all
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px
+    }
+
+    .content::-webkit-scrollbar {
+      width: 5px
+    }
+
+    .content::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px
+    }
+
+    .tab-panel {
+      display: none;
+      max-width: 820px;
+      margin: 0 auto;
+      animation: fadeIn .2s ease
+    }
+
+    .tab-panel.active {
+      display: block
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    /* ── PAGE TITLE ── */
+    .pg-title {
+      margin-bottom: 20px
+    }
+
+    .pg-title h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .pg-title p {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.5
+    }
+
+    /* ── HOW IT WORKS BANNER ── */
+    .how-banner {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: .73rem;
+      color: #94a3b8;
+      line-height: 1.6
+    }
+
+    .how-banner strong {
+      color: var(--text);
+      display: block;
+      margin-bottom: 3px;
+      font-size: .78rem
+    }
+
+    .how-banner code {
+      font-family: var(--mono);
+      font-size: .65rem;
+      background: rgba(255, 255, 255, .06);
+      padding: 1px 5px;
+      border-radius: 3px;
+      color: var(--accent)
+    }
+
+    .how-banner.p {
+      border-left-color: var(--purple)
+    }
+
+    .how-banner.g {
+      border-left-color: var(--green)
+    }
+
+    .how-banner.y {
+      border-left-color: var(--yellow)
+    }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden
+    }
+
+    .card-hdr {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .card-hdr-title {
+      font-size: .78rem;
+      font-weight: 600;
+      flex: 1
+    }
+
+    .card-hdr-badge {
+      font-size: .62rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      letter-spacing: .04em;
+      text-transform: uppercase
+    }
+
+    .badge-on {
+      background: var(--green-glow);
+      color: var(--green);
+      border: 1px solid rgba(52, 211, 153, .25)
+    }
+
+    .badge-off {
+      background: rgba(255, 255, 255, .05);
+      color: var(--muted);
+      border: 1px solid var(--border)
+    }
+
+    .card-body {
+      padding: 16px
+    }
+
+    /* ── INPUT ROW ── */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px
+    }
+
+    .inp {
+      flex: 1;
+      background: var(--inp-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .78rem;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, background .25s
+    }
+
+    .inp:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 153, 204, .1)
+    }
+
+    .inp::placeholder {
+      color: var(--muted)
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 10px 18px;
+      border-radius: 7px;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: .75rem;
       font-weight: 600;
       cursor: pointer;
-      transition: 0.2s;
+      transition: all .15s;
+      white-space: nowrap
     }
 
-    button:hover {
-      background-color: var(--primary-hover);
-      transform: translateY(-1px);
+    .btn:active {
+      transform: scale(.97)
     }
 
-    /* ───── MAIN CONTENT ───── */
-    main {
-      flex: 1;
-      padding: 40px;
-      max-width: 1200px;
-      margin: 0 auto;
-      width: 100%;
-      display: none;
+    .btn-blue {
+      background: linear-gradient(135deg, var(--accent), #0099cc);
+      color: #000
     }
 
-    /* ───── SECURITY DEMONSTRATOR ───── */
-    .security-panel {
-      background: #fff5f5;
-      border: 1px solid #ffbcba;
-      border-radius: 8px;
-      padding: 24px;
-      margin-bottom: 40px;
-      display: flex;
-      align-items: flex-start;
-      gap: 24px;
-      box-shadow: var(--shadow);
+    .btn-blue:hover {
+      opacity: .88;
+      box-shadow: 0 4px 12px rgba(0, 212, 255, .3)
     }
 
-    .sec-icon {
-      background: var(--security);
-      color: white;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      flex-shrink: 0;
+    .btn-ghost {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      color: var(--muted)
     }
 
-    .sec-content h3 {
-      color: var(--security);
-      margin-bottom: 8px;
-      font-size: 18px;
+    .btn-ghost:hover {
+      border-color: var(--accent);
+      color: var(--accent)
     }
 
-    .sec-content p {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.6;
-      margin-bottom: 16px;
+    .btn-purple {
+      background: var(--purple-glow);
+      border: 1px solid rgba(129, 140, 248, .3);
+      color: var(--purple)
     }
 
-    .code-block {
-      background: #24292e;
-      color: #e1e4e8;
-      padding: 12px;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 13px;
-      margin-bottom: 16px;
+    .btn-purple:hover {
+      background: rgba(129, 140, 248, .22)
     }
 
-    /* ───── IPC SIMULATOR SECTIONS ───── */
-    .ipc-section {
-      background: var(--surface-color);
-      border-radius: 12px;
-      box-shadow: var(--shadow);
-      margin-bottom: 40px;
-      overflow: hidden;
+    .btn-green {
+      background: var(--green-glow);
+      border: 1px solid rgba(52, 211, 153, .3);
+      color: var(--green)
     }
 
-    .ipc-header {
-      background: #f6f8fa;
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .btn-green:hover {
+      background: rgba(52, 211, 153, .22)
     }
 
-    .ipc-header h3 {
-      font-size: 18px;
-      color: var(--text-main);
+    .btn-yellow {
+      background: var(--yellow-glow);
+      border: 1px solid rgba(251, 191, 36, .3);
+      color: var(--yellow)
     }
 
-    .help-badge {
-      font-size: 12px;
-      background: white;
-      border: 1px solid var(--border-color);
-      padding: 4px 10px;
-      border-radius: 12px;
-      cursor: help;
+    .btn-yellow:hover {
+      background: rgba(251, 191, 36, .22)
     }
 
-    .simulator-canvas {
-      display: flex;
-      align-items: stretch;
-      min-height: 300px;
+    .btn-red {
+      background: var(--red-glow);
+      border: 1px solid rgba(248, 113, 113, .3);
+      color: var(--red)
     }
 
-    .process-box {
-      flex: 1;
-      padding: 32px;
-      display: flex;
-      flex-direction: column;
+    .btn-red:hover {
+      background: rgba(248, 113, 113, .22)
     }
 
-    .pb-title {
-      font-weight: 700;
-      margin-bottom: 16px;
+    /* ── FLOW DISPLAY ── */
+    .flow {
       display: flex;
       align-items: center;
       gap: 8px;
+      padding: 10px 14px;
+      background: var(--flow-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      margin-bottom: 12px;
+      font-size: .7rem;
+      color: var(--muted);
+      flex-wrap: wrap
     }
 
-    .pb-title.a {
-      color: var(--process-a);
+    .flow-node {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 5px 10px;
+      font-family: var(--mono);
+      font-size: .65rem;
+      color: var(--text);
+      white-space: nowrap;
+      box-shadow: var(--shadow)
     }
 
-    .pb-title.b {
-      color: var(--process-b);
+    .flow-arrow {
+      color: var(--accent);
+      font-size: .9rem
     }
 
-    .bridge {
-      width: 120px;
+    /* ── MESSAGE LOG ── */
+    .msg-log {
+      background: var(--msg-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px;
+      min-height: 110px;
+      max-height: 200px;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #fafbfc;
-      border-left: 1px dashed var(--border-color);
-      border-right: 1px dashed var(--border-color);
-      position: relative;
+      gap: 5px
     }
 
-    .bridge-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      text-align: center;
+    .msg-log::-webkit-scrollbar {
+      width: 3px
     }
 
-    /* Animations */
-    .arrow-container {
-      width: 100%;
-      height: 2px;
-      background: var(--border-color);
-      position: relative;
-      margin: 20px 0;
+    .msg-log::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px
     }
 
-    .packet {
-      position: absolute;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--primary);
-      top: -5px;
-      left: 0;
-      opacity: 0;
+    .msg-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      animation: slideUp .18s ease
     }
 
-    @keyframes sendPacket {
-      0% {
-        left: 0;
-        opacity: 1;
-      }
-
-      90% {
-        left: 100%;
-        opacity: 1;
-      }
-
-      100% {
-        left: 100%;
+    @keyframes slideUp {
+      from {
         opacity: 0;
+        transform: translateY(4px)
+      }
+
+      to {
+        opacity: 1
       }
     }
 
-    .packet.animate {
-      animation: sendPacket 1s ease-in-out;
+    .msg-dir {
+      font-size: .58rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px
     }
 
-    /* Lists & Output */
-    .output-console {
-      background: #24292e;
-      color: #85e89d;
-      padding: 16px;
-      border-radius: 6px;
-      font-family: monospace;
-      font-size: 13px;
-      height: 150px;
+    .dir-out {
+      background: rgba(0, 212, 255, .15);
+      color: var(--accent)
+    }
+
+    .dir-in {
+      background: var(--green-glow);
+      color: var(--green)
+    }
+
+    .msg-txt {
+      font-family: var(--mono);
+      font-size: .73rem;
+      word-break: break-all;
+      flex: 1
+    }
+
+    .msg-ts {
+      font-size: .6rem;
+      color: var(--muted);
+      white-space: nowrap;
+      margin-top: 2px
+    }
+
+    .log-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: .72rem;
+      padding: 24px;
+      flex: 1
+    }
+
+    /* ── QUEUE VIZ ── */
+    .queue-box {
+      background: var(--queue-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 10px;
+      min-height: 90px;
+      max-height: 180px;
       overflow-y: auto;
-      white-space: pre-wrap;
-      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px
+    }
+
+    .queue-box::-webkit-scrollbar {
+      width: 3px
+    }
+
+    .queue-box::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px
+    }
+
+    .q-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--purple-glow);
+      border: 1px solid rgba(129, 140, 248, .2);
+      border-radius: 6px;
+      padding: 7px 11px;
+      animation: slideUp .18s ease
+    }
+
+    .q-num {
+      font-family: var(--mono);
+      font-size: .62rem;
+      color: var(--purple);
+      font-weight: 700;
+      min-width: 22px
+    }
+
+    .q-msg {
+      font-family: var(--mono);
+      font-size: .73rem;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .q-ts {
+      font-size: .6rem;
+      color: var(--muted);
+      flex-shrink: 0
+    }
+
+    /* ── MEMORY BOX ── */
+    .mem-box {
+      background: var(--mem-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 13px 15px;
+      font-family: var(--mono);
+      font-size: .72rem
+    }
+
+    .mem-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: .6rem;
+      color: var(--muted);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      margin-bottom: 10px
+    }
+
+    .mem-data {
+      color: var(--yellow);
+      line-height: 1.7;
+      word-break: break-all;
+      min-height: 28px
+    }
+
+    .mem-meta {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: .65rem;
+      color: var(--muted)
+    }
+
+    .mem-hex {
+      color: #94a3b8;
+      margin-top: 3px
+    }
+
+    /* ── SECURITY ── */
+    .sec-test-box {
+      background: var(--sec-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 13px 15px;
+      font-family: var(--mono);
+      font-size: .7rem;
+      line-height: 1.65;
+      display: none;
+      margin-top: 12px;
+      white-space: pre-wrap
+    }
+
+    .sddl-display {
+      background: var(--sddl-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 13px 15px;
+      font-family: var(--mono);
+      font-size: .68rem;
+      color: var(--yellow);
+      line-height: 1.7;
+      margin-bottom: 10px
+    }
+
+    .sddl-note {
+      font-family: 'Inter', sans-serif;
+      font-size: .68rem;
+      color: #94a3b8;
+      margin-top: 8px;
+      line-height: 1.55
+    }
+
+    .sec-info-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 14px
+    }
+
+    .srow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 12px;
+      background: var(--srow-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px
+    }
+
+    .srow-label {
+      font-size: .7rem;
+      color: var(--muted)
+    }
+
+    .srow-val {
+      font-family: var(--mono);
+      font-size: .7rem;
+      font-weight: 600;
+      color: var(--green)
+    }
+
+    /* ── AUDIT LOG ── */
+    .log-filters {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 12px
+    }
+
+    .lf-btn {
+      padding: 4px 11px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: .63rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--muted);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      transition: all .15s
+    }
+
+    .lf-btn:hover {
+      color: var(--text)
+    }
+
+    .lf-btn.on {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0, 212, 255, .08)
+    }
+
+    .lf-btn.on.s {
+      border-color: var(--yellow);
+      color: var(--yellow);
+      background: var(--yellow-glow)
+    }
+
+    .lf-btn.on.e {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-glow)
+    }
+
+    .log-scroll {
+      background: var(--log-bg);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px;
+      height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 2px
+    }
+
+    .log-scroll::-webkit-scrollbar {
+      width: 4px
+    }
+
+    .log-scroll::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 2px
+    }
+
+    .log-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      transition: background .1s
+    }
+
+    .log-row:hover {
+      background: rgba(0, 0, 0, .04)
+    }
+
+    .log-t {
+      font-family: var(--mono);
+      font-size: .63rem;
+      color: var(--muted);
+      white-space: nowrap
+    }
+
+    .log-lvl {
+      font-size: .58rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      letter-spacing: .05em;
+      white-space: nowrap
+    }
+
+    .log-lvl.INFO {
+      background: rgba(0, 212, 255, .13);
+      color: var(--accent)
+    }
+
+    .log-lvl.SECURITY {
+      background: var(--yellow-glow);
+      color: var(--yellow)
+    }
+
+    .log-lvl.ERROR {
+      background: var(--red-glow);
+      color: var(--red)
+    }
+
+    .log-msg {
+      font-family: var(--mono);
+      font-size: .7rem;
+      color: var(--muted);
+      flex: 1
+    }
+
+    /* ── STAT MINI CARDS ── */
+    .mini-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px
+    }
+
+    .ms {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px
+    }
+
+    .ms-lbl {
+      font-size: .62rem;
+      color: var(--muted);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 4px
+    }
+
+    .ms-val {
+      font-family: var(--mono);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1
+    }
+
+    .ms-val.p {
+      color: var(--purple)
+    }
+
+    .ms-val.g {
+      color: var(--green)
+    }
+
+    .ms-val.y {
+      color: var(--yellow)
+    }
+
+    /* ── TOAST ── */
+    .toast-area {
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 999
+    }
+
+    .toast {
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: .74rem;
+      font-weight: 500;
+      max-width: 280px;
+      border: 1px solid;
+      animation: tIn .25s ease, tOut .25s ease 2.8s forwards
+    }
+
+    .toast.ok {
+      background: var(--green-glow);
+      border-color: rgba(52, 211, 153, .3);
+      color: var(--green)
+    }
+
+    .toast.er {
+      background: var(--red-glow);
+      border-color: rgba(248, 113, 113, .3);
+      color: var(--red)
+    }
+
+    .toast.in {
+      background: rgba(0, 212, 255, .12);
+      border-color: rgba(0, 212, 255, .3);
+      color: var(--accent)
+    }
+
+    .toast.wa {
+      background: var(--yellow-glow);
+      border-color: rgba(251, 191, 36, .3);
+      color: var(--yellow)
+    }
+
+    @keyframes tIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1
+      }
+    }
+
+    @keyframes tOut {
+      to {
+        opacity: 0
+      }
+    }
+
+    /* ── OVERVIEW CARDS ── */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px
+    }
+
+    .ov-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px
+    }
+
+    .ov-icon {
+      font-size: 1.5rem;
+      margin-bottom: 8px
+    }
+
+    .ov-title {
+      font-size: .78rem;
+      font-weight: 700;
+      margin-bottom: 4px
+    }
+
+    .ov-desc {
+      font-size: .68rem;
+      color: var(--muted);
+      line-height: 1.5
+    }
+
+    .ov-card.pipe {
+      border-top: 2px solid var(--accent)
+    }
+
+    .ov-card.queue {
+      border-top: 2px solid var(--purple)
+    }
+
+    .ov-card.shm {
+      border-top: 2px solid var(--yellow)
+    }
+
+    /* ── THEME TOGGLE BUTTON ── */
+    .theme-btn {
+      padding: 6px 13px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: var(--card2);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: .72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .theme-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    /* Light mode key-box fix */
+    body.light .key-box {
+      background: #f1f5f9
+    }
+
+    body.light .top-info .v {
+      color: var(--muted)
+    }
+
+    body.light .log-msg {
+      color: #475569
+    }
+
+    body.light .sddl-note {
+      color: #475569
+    }
+
+    body.light .ov-desc {
+      color: #475569
+    }
+
+    body.light .how-banner {
+      color: #475569
     }
   </style>
 </head>
 
 <body>
 
-  <!-- LOGIN SIMULATOR -->
-  <div id="login-overlay">
-    <div class="login-card">
-      <h2>Educational Framework Login</h2>
-      <p>Please enter the secure assignment token to unlock the IPC testing simulator.</p>
-      <input type="password" id="master-key" placeholder="Check token.txt file">
-      <button style="width: 100%" onclick="login()">Authenticate Session</button>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="top-logo">
+      <div class="top-logo-ico">⚡</div>
+      <div>
+        <div class="top-logo-name">IPC Framework</div>
+        <div class="top-logo-ver">C++17 &middot; Native WinAPI &middot; v1.0</div>
+      </div>
+    </div>
+    <div class="top-sep"></div>
+    <div class="top-info">
+      <span>Port <span class="v">8080</span></span>
+      <span>PID <span class="v" id="hPid">—</span></span>
+      <span>Key <span class="v" style="color:var(--green)">IPC2026SECURE</span></span>
+    </div>
+    <div class="top-right">
+      <div class="top-uptime" id="hUptime">00:00:00</div>
+      <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()">☀️ Light Mode</button>
+      <div class="status-pill">
+        <div class="sdot"></div>Live
+      </div>
     </div>
   </div>
 
-  <header>
-    <div class="app-title">IPC Simulator & Demonstrator</div>
-    <div class="badge">Visual Mode Active</div>
-  </header>
+  <!-- LAYOUT -->
+  <div class="layout">
 
-  <main id="main-content">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-label">IPC Channels</div>
+      <button class="nav-btn active" id="nb-overview" onclick="showTab('overview',this,'')">
+        <span class="ico">🏠</span> Overview
+      </button>
+      <button class="nav-btn" id="nb-pipe" onclick="showTab('pipe',this,'')">
+        <span class="ico">🔗</span> Named Pipe
+        <span class="nav-badge on" id="nb-pipe-badge">ON</span>
+      </button>
+      <button class="nav-btn" id="nb-queue" onclick="showTab('queue',this,'p')">
+        <span class="ico">📨</span> Message Queue
+        <span class="nav-badge on" id="nb-queue-badge">ON</span>
+      </button>
+      <button class="nav-btn" id="nb-shm" onclick="showTab('shm',this,'y')">
+        <span class="ico">💾</span> Shared Memory
+        <span class="nav-badge on" id="nb-shm-badge">ON</span>
+      </button>
+      <div class="sidebar-label" style="margin-top:8px">System</div>
+      <button class="nav-btn" id="nb-security" onclick="showTab('security',this,'g')">
+        <span class="ico">🛡</span> OS Security
+      </button>
+      <button class="nav-btn" id="nb-log" onclick="showTab('log',this,'r')">
+        <span class="ico">📋</span> Audit Log
+        <span class="nav-badge" id="nb-log-badge">0</span>
+      </button>
 
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-      <p style="font-size: 16px; color: var(--text-muted);">Interactive demonstrator for Named Pipes, Message Queues,
-        and Shared Memory.</p>
-      <button onclick="startServices()">[ 1 ] Initialize OS Backends First</button>
-    </div>
-
-    <!-- SECURITY CENTER -->
-    <div class="security-panel">
-      <div class="sec-icon">🛡️</div>
-      <div class="sec-content" style="flex:1;">
-        <h3>Windows Kernel Security (DACL Validator)</h3>
-        <p>This project uses real OS-level security descriptors (not just web passwords). The backend has applied a
-          strict Discretionary Access Control List (DACL) that restricts IPC access entirely to authorized OS users
-          (Administrators, Local System, Interactive User).</p>
-        <div class="code-block">SECURITY_DESCRIPTOR SDDL:<br>"D:(A;;GA;;;BA)(A;;GA;;;SY)(A;;GA;;;CU)"</div>
-        <div style="display:flex; align-items:center; gap:16px;">
-          <button style="background:var(--security);" onclick="testSecurity()">Simulate Unauthorized Access
-            Attempt</button>
-          <div id="sec-result" style="font-family:monospace; font-weight:600; color:var(--security);"></div>
-          <button id="auth-btn" style="display:none; background:#ffc107; color:#333; font-weight:700;"
-            onclick="reqPermission()">Request Interactive OS Dialog</button>
+      <div class="sidebar-footer">
+        <div class="key-box">
+          <div class="key-lbl">Session Key</div>
+          <div class="key-val">IPC2026SECURE</div>
         </div>
       </div>
     </div>
 
-    <!-- SIMULATOR: NAMED PIPES -->
-    <div class="ipc-section">
-      <div class="ipc-header" style="flex-direction:column; align-items:flex-start;">
-        <h3>1. Named Pipe (1-to-1 Duplex Stream)</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">
-          <strong>Real World Use Case:</strong> Client-Server architectures (like a web browser talking to a local database system). Named pipes act like a physical wire connecting exactly two processes. Data is guaranteed to arrive in the exact order it was sent without corruption.
-        </p>
-      </div>
-      <div class="simulator-canvas">
+    <!-- CONTENT -->
+    <div class="content">
 
-        <div class="process-box">
-          <div class="pb-title a"><span>📦</span> Process A (Client)</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Injects data linearly into the pipe
-            stream.</p>
-          <input type="text" id="pipeIn" placeholder="Type data payload...">
-          <button style="background:var(--process-a);" onclick="sendPipe()">Inject into Pipe →</button>
+      <!-- OVERVIEW -->
+      <div class="tab-panel active" id="tab-overview">
+        <div class="pg-title">
+          <h2>🏠 System Overview</h2>
+          <p>All three IPC channels are active and DACL-secured. Select a channel from the sidebar to interact with it.
+          </p>
         </div>
 
-        <div class="bridge">
-          <div class="bridge-label">\\.\pipe\<br>secure_pipe_1</div>
-          <div class="arrow-container">
-            <div class="packet" id="pipe-pkt"></div>
+        <div class="overview-grid">
+          <div class="ov-card pipe">
+            <div class="ov-icon">🔗</div>
+            <div class="ov-title">Named Pipe</div>
+            <div class="ov-desc">Bidirectional message stream between processes. Uses <code
+                style="font-family:var(--mono);font-size:.62rem;background:rgba(255,255,255,.06);padding:1px 4px;border-radius:3px;color:var(--accent)">CreateNamedPipe()</code>.
+              A background thread listens and buffers incoming data.</div>
+          </div>
+          <div class="ov-card queue">
+            <div class="ov-icon">📨</div>
+            <div class="ov-title">Message Queue</div>
+            <div class="ov-desc">One-to-many mailslot queue. Uses <code
+                style="font-family:var(--mono);font-size:.62rem;background:rgba(255,255,255,.06);padding:1px 4px;border-radius:3px;color:var(--purple)">CreateMailslot()</code>.
+              Multiple writers can enqueue; messages are read in FIFO order.</div>
+          </div>
+          <div class="ov-card shm">
+            <div class="ov-icon">💾</div>
+            <div class="ov-title">Shared Memory</div>
+            <div class="ov-desc">Mapped memory region accessible to authorized processes. Uses <code
+                style="font-family:var(--mono);font-size:.62rem;background:rgba(255,255,255,.06);padding:1px 4px;border-radius:3px;color:var(--yellow)">CreateFileMapping()</code>
+              with an atomic spinlock.</div>
           </div>
         </div>
 
-        <div class="process-box">
-          <div class="pb-title b"><span>🖥️</span> Process B (Server)</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Listens asynchronously to the pipe
-            stream.</p>
-          <button style="background:var(--process-b); margin-bottom: 12px;" onclick="recvPipe()">Check OS Pipe
-            Buffer</button>
-          <div class="output-console" id="pipeOut">Awaiting data...</div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- SIMULATOR: MESSAGE QUEUE -->
-    <div class="ipc-section" style="border-top: 4px solid var(--primary);">
-      <div class="ipc-header" style="flex-direction:column; align-items:flex-start;">
-        <h3>2. Message Queue (Mailslot: One-to-Many Broadcast)</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">
-          <strong>How Both Sides Work (One Publisher, Many Consumers):</strong> Mailslots allow a publisher to throw messages into an OS-managed queue without waiting for anyone to read them (Non-blocking). In the real world, this is used for System Event Logging or diagnostic ticketing—one service announces "System booting up" and multiple diagnostic listeners can independently read from the queue when they are ready.
-        </p>
-      </div>
-      <div class="simulator-canvas">
-
-        <div class="process-box">
-          <div class="pb-title a"><span>📢</span> Publisher Service</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Broadcasts events onto the queue
-            independently.</p>
-          <input type="text" id="queueIn" placeholder="Type event description...">
-          <button style="background:var(--process-a);" onclick="sendQueue()">Publish Broadcast →</button>
-        </div>
-
-        <div class="bridge">
-          <div class="bridge-label">\\.\mailslot\<br>secure_queue</div>
-          <div class="arrow-container">
-            <div class="packet" id="queue-pkt"></div>
+        <div class="card">
+          <div class="card-hdr">
+            <span style="font-size:1rem">🏗</span>
+            <span class="card-hdr-title">System Flow</span>
+          </div>
+          <div class="card-body">
+            <div class="flow">
+              <div class="flow-node">Browser</div>
+              <div class="flow-arrow">⟷</div>
+              <div class="flow-node">HTTP Server :8080</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">REST Router</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">IPC Objects</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">Windows Kernel</div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <div
+                style="flex:1;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);border-radius:7px;padding:11px 14px;font-size:.7rem;color:#94a3b8;line-height:1.6">
+                <div style="color:var(--accent);font-weight:600;margin-bottom:4px">Named Pipe — <span
+                    style="font-family:var(--mono);font-size:.65rem">\\.\pipe\secure_pipe_1</span></div>
+                Thread-safe duplex I/O. Background listener thread calls ConnectNamedPipe() and enqueues received data
+                into a mutex-protected deque.
+              </div>
+              <div
+                style="flex:1;background:var(--purple-glow);border:1px solid rgba(129,140,248,.15);border-radius:7px;padding:11px 14px;font-size:.7rem;color:#94a3b8;line-height:1.6">
+                <div style="color:var(--purple);font-weight:600;margin-bottom:4px">Mailslot — <span
+                    style="font-family:var(--mono);font-size:.65rem">\\.\mailslot\secure_queue_1</span></div>
+                1-to-many broadcast queue. GetMailslotInfo() polls depth before reading. Each message is timestamped at
+                enqueue time.
+              </div>
+              <div
+                style="flex:1;background:var(--yellow-glow);border:1px solid rgba(251,191,36,.15);border-radius:7px;padding:11px 14px;font-size:.7rem;color:#94a3b8;line-height:1.6">
+                <div style="color:var(--yellow);font-weight:600;margin-bottom:4px">SHM — <span
+                    style="font-family:var(--mono);font-size:.65rem">OS_SECURE_SHM (4 KB)</span></div>
+                MapViewOfFile() maps shared pages. LONG spinlock via InterlockedCompareExchange() prevents torn
+                reads/writes between threads.
+              </div>
+            </div>
+            <div
+              style="margin-top:12px;padding:10px 14px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:7px;font-size:.7rem;color:#94a3b8;line-height:1.55">
+              <strong style="color:var(--yellow)">🛡 Security:</strong> All IPC objects created with <code
+                style="font-family:var(--mono);font-size:.62rem;background:rgba(255,255,255,.06);padding:1px 4px;border-radius:3px;color:var(--yellow)">SECURITY_ATTRIBUTES</code>
+              from SDDL string <code
+                style="font-family:var(--mono);font-size:.62rem;background:rgba(255,255,255,.06);padding:1px 4px;border-radius:3px;color:var(--yellow)">D:(A;;GA;;;BA)(A;;GA;;;SY)(A;;GA;;;CU)</code>
+              — anonymous processes receive ERROR_ACCESS_DENIED from the Windows kernel.
+            </div>
           </div>
         </div>
 
-        <div class="process-box">
-          <div class="pb-title b"><span>🖥️</span> Listener Threads (Consumers)</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Multiple listeners can pull events off the queue asynchronously.</p>
-          <button style="background:var(--process-b); margin-bottom: 12px;" onclick="recvQueue()">Consumer 1: Dequeue Task</button>
-          <button style="background:#4b2781; margin-bottom: 12px;" onclick="recvQueue()">Consumer 2: Dequeue Task</button>
-          <div class="output-console" id="queueOut">Queue empty...</div>
+        <div class="mini-stats">
+          <div class="ms">
+            <div class="ms-lbl">Pipe Messages</div>
+            <div class="ms-val" id="ov-pipe">0</div>
+          </div>
+          <div class="ms">
+            <div class="ms-lbl">Queue Messages</div>
+            <div class="ms-val p" id="ov-queue">0</div>
+          </div>
+          <div class="ms">
+            <div class="ms-lbl">SHM Operations</div>
+            <div class="ms-val y" id="ov-shm">0</div>
+          </div>
         </div>
-
       </div>
-    </div>
 
-    <!-- SIMULATOR: SHARED MEMORY -->
-    <div class="ipc-section">
-      <div class="ipc-header" style="flex-direction:column; align-items:flex-start;">
-        <h3>3. OS Shared Memory (Zero-Copy Interlocked Spinlock)</h3>
-        <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">
-          <strong>Real World Use Case:</strong> High-performance Video Games or Stock Trading algorithms. By using `CreateFileMapping`, two entirely different apps literally look at the exact same physical piece of RAM simultaneously. This is the **fastest IPC method possible** because no data is actually copied across boundaries.
-        </p>
+      <!-- NAMED PIPE -->
+      <div class="tab-panel" id="tab-pipe">
+        <div class="pg-title">
+          <h2>🔗 Named Pipe</h2>
+          <p>Bidirectional message stream — <code
+              style="font-family:var(--mono);font-size:.68rem;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px;color:var(--accent)">\\.\pipe\secure_pipe_1</code>
+          </p>
+        </div>
+        <div class="how-banner">
+          <strong>How it works</strong>
+          The server creates a named pipe with <code>CreateNamedPipe()</code> and a background thread waits for
+          connections via <code>ConnectNamedPipe()</code>. When you click <strong>Send</strong>, a client handle opens
+          the pipe with <code>CreateFile()</code> and calls <code>WriteFile()</code>. The listener thread picks it up
+          and buffers it — click <strong>Receive</strong> to dequeue it.
+        </div>
+
+        <div class="card">
+          <div class="card-hdr">
+            <span style="font-size:.9rem">✉</span>
+            <span class="card-hdr-title">Send a Message</span>
+            <span class="card-hdr-badge badge-on" id="pipe-status-badge">● ACTIVE</span>
+          </div>
+          <div class="card-body">
+            <div class="flow" style="margin-bottom:12px">
+              <div class="flow-node">Your Input</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">CreateFile(pipe)</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">WriteFile()</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">Kernel Buffer</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">Listener Thread</div>
+            </div>
+            <div class="input-row">
+              <input class="inp" id="pipe-input" placeholder="Type a message to send through the pipe..." />
+              <button class="btn btn-blue" onclick="pipeSend()">Send →</button>
+              <button class="btn btn-ghost" onclick="pipeRecv()">← Receive</button>
+            </div>
+            <div style="font-size:.65rem;color:var(--muted);margin-bottom:8px;display:flex;gap:14px">
+              <span>📤 Sent: <strong id="pipe-sent-ct" style="color:var(--accent)">0</strong></span>
+              <span>📥 Received: <strong id="pipe-recv-ct" style="color:var(--green)">0</strong></span>
+            </div>
+            <div class="msg-log" id="pipe-log">
+              <div class="log-empty">No messages yet — send something through the pipe</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="simulator-canvas">
 
-        <div class="process-box">
-          <div class="pb-title a"><span>📦</span> Process A (Memory Writer)</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Locks the memory address using an Interlocked Spinlock to modify data without collisions.</p>
-          <input type="text" id="shmIn" placeholder="Type memory contents...">
-          <button style="background:var(--process-a);" onclick="writeShm()">Mutate Memory Location</button>
+      <!-- MESSAGE QUEUE -->
+      <div class="tab-panel" id="tab-queue">
+        <div class="pg-title">
+          <h2>📨 Message Queue</h2>
+          <p>Windows Mailslot — <code
+              style="font-family:var(--mono);font-size:.68rem;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px;color:var(--purple)">\\.\mailslot\secure_queue_1</code>
+          </p>
+        </div>
+        <div class="how-banner p">
+          <strong>How it works</strong>
+          The server creates a Mailslot with <code>CreateMailslot()</code>. Any process with permission can write by
+          opening it with <code>CreateFile()</code> + <code>WriteFile()</code>. Messages accumulate in the OS buffer.
+          <code>GetMailslotInfo()</code> checks queue depth, then <code>ReadFile()</code> dequeues the oldest message.
         </div>
 
-        <div class="bridge" style="background:#fff3cd; border-color:#ffeeba;">
-          <div class="bridge-label" style="color:#856404;">SHARED RAM<br>(Fastest)</div>
-          <div style="font-size:24px; color:#856404;">💾</div>
+        <div class="card">
+          <div class="card-hdr">
+            <span style="font-size:.9rem">📬</span>
+            <span class="card-hdr-title">Queue Operations</span>
+            <span class="card-hdr-badge badge-on" id="queue-status-badge">● ACTIVE</span>
+          </div>
+          <div class="card-body">
+            <div class="flow" style="margin-bottom:12px">
+              <div class="flow-node">Your Input</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">CreateFile(slot)</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">WriteFile()</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">OS Queue Buffer</div>
+              <div class="flow-arrow">⟵ ReadFile()</div>
+              <div class="flow-node">Dequeue</div>
+            </div>
+            <div class="input-row">
+              <input class="inp" id="queue-input" placeholder="Message to enqueue..." />
+              <button class="btn btn-purple" onclick="queueSend()">Enqueue</button>
+              <button class="btn btn-ghost" onclick="queueRecv()">Dequeue</button>
+            </div>
+            <div style="font-size:.65rem;color:var(--muted);margin-bottom:8px;display:flex;gap:14px">
+              <span>📥 Queued: <strong id="q-sent-ct" style="color:var(--purple)">0</strong></span>
+              <span>📤 Dequeued: <strong id="q-recv-ct" style="color:var(--green)">0</strong></span>
+            </div>
+            <div class="queue-box" id="queue-viz">
+              <div class="log-empty">Queue is empty</div>
+            </div>
+          </div>
         </div>
-
-        <div class="process-box">
-          <div class="pb-title b"><span>🖥️</span> Process B (Memory Reader)</div>
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom: 24px;">Reads instantly from the shared
-            physical memory location blocks.</p>
-          <button style="background:var(--process-b); margin-bottom: 12px;" onclick="readShm()">Dump Memory Address
-            Data</button>
-          <div class="output-console" id="shmOut">Unknown...</div>
-        </div>
-
       </div>
-    </div>
 
-  </main>
+      <!-- SHARED MEMORY -->
+      <div class="tab-panel" id="tab-shm">
+        <div class="pg-title">
+          <h2>💾 Shared Memory</h2>
+          <p>Memory-mapped region — <code
+              style="font-family:var(--mono);font-size:.68rem;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px;color:var(--yellow)">OS_SECURE_SHM</code>
+            &middot; 4 KB &middot; Spinlock protected</p>
+        </div>
+        <div class="how-banner y">
+          <strong>How it works</strong>
+          <code>CreateFileMapping()</code> allocates a named 4 KB shared memory region. <code>MapViewOfFile()</code>
+          maps it into the process address space. A <code>LONG</code> spinlock using
+          <code>InterlockedCompareExchange()</code> ensures only one thread writes at a time. Click
+          <strong>Write</strong> to store data, <strong>Read</strong> to fetch the current contents.
+        </div>
+
+        <div class="card">
+          <div class="card-hdr">
+            <span style="font-size:.9rem">✏</span>
+            <span class="card-hdr-title">Memory Operations</span>
+            <span class="card-hdr-badge badge-on" id="shm-status-badge">● MAPPED</span>
+          </div>
+          <div class="card-body">
+            <div class="flow" style="margin-bottom:12px">
+              <div class="flow-node">Your Input</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">Acquire Spinlock</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">memcpy → ShmHeader</div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node">Release Lock</div>
+            </div>
+            <div class="input-row">
+              <input class="inp" id="shm-input" placeholder="Data to write into shared memory..." />
+              <button class="btn btn-yellow" onclick="shmWrite()">Write</button>
+              <button class="btn btn-ghost" onclick="shmRead()">Read</button>
+            </div>
+            <div style="font-size:.65rem;color:var(--muted);margin-bottom:8px;display:flex;gap:14px">
+              <span>✏ Writes: <strong id="shm-w-ct" style="color:var(--yellow)">0</strong></span>
+              <span>📖 Reads: <strong id="shm-r-ct" style="color:var(--accent)">0</strong></span>
+            </div>
+            <div class="mem-box">
+              <div class="mem-header"><span>REGION: OS_SECURE_SHM</span><span id="shm-size">0 bytes used</span></div>
+              <div class="mem-data" id="shm-data-disp">— no data written yet —</div>
+              <div class="mem-meta">Offset 0x00 &nbsp;|&nbsp; Max 4080 bytes &nbsp;|&nbsp; Spinlock: <span
+                  id="shm-lock-state" style="color:var(--green)">FREE</span></div>
+              <div class="mem-hex" id="shm-hex"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECURITY -->
+      <div class="tab-panel" id="tab-security">
+        <div class="pg-title">
+          <h2>🛡 OS Security</h2>
+          <p>Windows DACL &middot; Kernel-enforced access control on all IPC objects</p>
+        </div>
+        <div class="how-banner g">
+          <strong>How it works</strong>
+          Each IPC object (<code>CreateNamedPipe</code>, <code>CreateMailslot</code>, <code>CreateFileMapping</code>) is
+          created with a <code>SECURITY_ATTRIBUTES</code> structure built from an SDDL string. The Windows kernel checks
+          this descriptor on every access attempt. Anonymous or unauthorized processes receive
+          <code>ERROR_ACCESS_DENIED (5)</code> before any user-mode code runs.
+        </div>
+
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-hdr"><span style="font-size:.9rem">📋</span><span class="card-hdr-title">Active Security
+              Configuration</span></div>
+          <div class="card-body">
+            <div class="sec-info-rows">
+              <div class="srow"><span class="srow-label">DACL Status</span><span class="srow-val">Enforced on all 3 IPC
+                  objects</span></div>
+              <div class="srow"><span class="srow-label">Session Key</span><span class="srow-val">IPC2026SECURE
+                  (pre-authorized)</span></div>
+              <div class="srow"><span class="srow-label">Token Validation</span><span
+                  class="srow-val">gACL::isAuthorized() — every API call</span></div>
+              <div class="srow"><span class="srow-label">Blocked Subjects</span><span class="srow-val"
+                  style="color:var(--red)">Anonymous, Guest, Untrusted</span></div>
+            </div>
+            <div
+              style="font-size:.65rem;color:var(--muted);margin-bottom:6px;letter-spacing:.05em;text-transform:uppercase;font-weight:700">
+              Security Descriptor (SDDL)</div>
+            <div class="sddl-display">D:(A;;GA;;;BA)(A;;GA;;;SY)(A;;GA;;;CU)
+              <div class="sddl-note">
+                A;;GA;;;BA &nbsp;→ Allow Generic All to Built-in Administrators<br>
+                A;;GA;;;SY &nbsp;→ Allow Generic All to Local System<br>
+                A;;GA;;;CU &nbsp;→ Allow Generic All to Current Interactive User<br>
+                All other subjects → implicitly DENIED by kernel
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hdr"><span style="font-size:.9rem">🔬</span><span class="card-hdr-title">Security Check</span></div>
+          <div class="card-body">
+            <div style="font-size:.72rem;color:var(--muted);margin-bottom:12px;line-height:1.5">
+              The server impersonates an anonymous Windows token and attempts to open the named pipe. The kernel checks the DACL and returns <code style="font-family:var(--mono);font-size:.65rem;background:rgba(255,255,255,.06);padding:1px 4px;border-radius:3px;color:var(--red)">ERROR_ACCESS_DENIED</code> — real OS-level enforcement.
+            </div>
+            <div style="display:flex;gap:9px;flex-wrap:wrap">
+              <button class="btn btn-red" onclick="testUnauth()">🔐 Check Unauthorized Access</button>
+              <button class="btn btn-green" onclick="testAuth()">🔓 Request OS Override</button>
+            </div>
+            <div id="sec-result" class="sec-test-box"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIT LOG -->
+      <div class="tab-panel" id="tab-log">
+        <div class="pg-title">
+          <h2>📋 Audit Log</h2>
+          <p>All IPC operations and security events — updated in real time</p>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="log-filters">
+              <button class="lf-btn on" id="lf-ALL" onclick="setFilter('ALL',this)">All</button>
+              <button class="lf-btn" id="lf-INFO" onclick="setFilter('INFO',this)">Info</button>
+              <button class="lf-btn s" id="lf-SECURITY" onclick="setFilter('SECURITY',this)">Security</button>
+              <button class="lf-btn e" id="lf-ERROR" onclick="setFilter('ERROR',this)">Error</button>
+              <button class="lf-btn" onclick="clearLog()" style="margin-left:auto">Clear</button>
+            </div>
+            <div class="log-scroll" id="log-list">
+              <div class="log-empty">Loading log entries...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /layout -->
+
+  <div class="toast-area" id="toasts"></div>
 
   <script>
-    let sessionToken = "";
+    const TOKEN = 'IPC2026SECURE';
+    const api = (url, method = 'GET', body = null) =>
+      fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : null })
+        .then(r => r.json()).catch(() => ({}));
 
-    function pop(id) {
-      const el = document.getElementById(id);
-      el.classList.remove('animate');
-      void el.offsetWidth; // trigger reflow
-      el.classList.add('animate');
+    // ── STATE
+    let pipeHist = [], qLocal = [], logCache = [], logFilter = 'ALL';
+    let pipeSentCt = 0, pipeRecvCt = 0, qSentCt = 0, qRecvCt = 0, shmWCt = 0, shmRCt = 0;
+    let startTime = Date.now();
+
+    // ── TABS
+    function showTab(id, btn, cls) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('tab-' + id).classList.add('active');
+      btn.classList.add('active');
+      if (cls) btn.classList.add(cls);
     }
 
-    function logTo(id, text) {
-      const box = document.getElementById(id);
-      box.textContent = `> ${text}\n` + box.textContent;
+    // ── TOAST
+    function toast(msg, type = 'in') {
+      const d = document.createElement('div');
+      d.className = 'toast ' + type;
+      d.textContent = msg;
+      document.getElementById('toasts').appendChild(d);
+      setTimeout(() => d.remove(), 3200);
     }
 
-    // ── HTTP HELPER
-    async function API(url, bodyData = null) {
-      try {
-        const opts = { method: bodyData ? 'POST' : 'GET' };
-        if (bodyData) {
-          opts.headers = { 'Content-Type': 'application/json' };
-          opts.body = JSON.stringify(bodyData);
-        }
-        const res = await fetch('http://localhost:8080' + url, opts);
-        return await res.json();
-      } catch (e) {
-        alert("API call failed."); return null;
-      }
+    // ── UPTIME
+    function tick() {
+      const s = Math.floor((Date.now() - startTime) / 1000);
+      const h = String(Math.floor(s / 3600)).padStart(2, '0');
+      const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+      const sc = String(s % 60).padStart(2, '0');
+      const el = document.getElementById('hUptime');
+      if (el) el.textContent = h + ':' + m + ':' + sc;
     }
 
-    // ── LOGIN / AUTH
-    async function login() {
-      const val = document.getElementById('master-key').value;
-      if (!val) return alert('Please enter token.');
-
-      const res = await API('/api/auth', { master: val });
-      if (res && res.token) {
-        sessionToken = res.token;
-        document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('main-content').style.display = 'block';
-      } else {
-        alert("Authentication failed.");
-      }
+    // ── STATS
+    async function pollStats() {
+      const s = await api('/api/status');
+      if (!s || s.uptime === undefined) return;
+      const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+      set('ov-pipe', (s.pipe_sent || 0) + (s.pipe_recv || 0));
+      set('ov-queue', (s.queue_sent || 0) + (s.queue_recv || 0));
+      set('ov-shm', (s.shm_writes || 0) + (s.shm_reads || 0));
+      set('nb-log-badge', s.log_count || 0);
+      // sync local counters
+      set('pipe-sent-ct', s.pipe_sent || 0);
+      set('pipe-recv-ct', s.pipe_recv || 0);
+      set('q-sent-ct', s.queue_sent || 0);
+      set('q-recv-ct', s.queue_recv || 0);
+      set('shm-w-ct', s.shm_writes || 0);
+      set('shm-r-ct', s.shm_reads || 0);
     }
 
-    // ── SERVICES INIT
-    async function startServices() {
-      await API('/api/start_services', {});
-      await API('/api/shm/init', { token: sessionToken });
-      alert("Success: All OS Services dynamically created via C++ backend.");
+    // ── SYSINFO
+    async function loadSysinfo() {
+      const s = await api('/api/sysinfo');
+      if (s.pid) { const e = document.getElementById('hPid'); if (e) e.textContent = s.pid; }
     }
 
-    // ── SECURITY TEST
-    async function testSecurity() {
-      const secRes = document.getElementById('sec-result');
-      const authBtn = document.getElementById('auth-btn');
-      authBtn.style.display = 'none';
-      secRes.style.color = 'var(--security)';
-      secRes.textContent = "Requesting kernel hack attempt...";
-
-      const res = await API('/api/test_unauthorized');
-      if (res && res.error_msg) {
-        secRes.textContent = `OS Response: [${res.error_code}] ${res.error_msg}`;
-        if (res.error_code === 5 || res.error_code === 2) {
-          authBtn.style.display = 'block'; // Trigger permission override prompt
-        }
-      }
+    // ── LOG
+    async function pollLog() {
+      const logs = await api('/api/log');
+      if (!Array.isArray(logs)) return;
+      logCache = logs;
+      renderLog();
     }
-
-    async function reqPermission() {
-      const secRes = document.getElementById('sec-result');
-      document.getElementById('auth-btn').style.display = 'none';
-      secRes.textContent = "Please check your desktop for Native Windows Dialog...";
-
-      const res = await API('/api/authorize_access');
-      if (res) {
-        if (res.granted) {
-          secRes.style.color = 'var(--process-a)';
-          secRes.textContent = "✅ SUCCESS: " + res.msg;
-        } else {
-          secRes.style.color = 'var(--security)';
-          secRes.textContent = "❌ REJECTED: " + res.msg;
-        }
-      }
+    function renderLog() {
+      const list = document.getElementById('log-list');
+      const filtered = logFilter === 'ALL' ? logCache : logCache.filter(e => e.level === logFilter);
+      if (!filtered.length) { list.innerHTML = '<div class="log-empty">No entries</div>'; return; }
+      list.innerHTML = filtered.map(e =>
+        `<div class="log-row">
+       <span class="log-t">${e.time}</span>
+       <span class="log-lvl ${e.level}">${e.level}</span>
+       <span class="log-msg">${e.message}</span>
+     </div>`
+      ).join('');
     }
+    function setFilter(f, btn) {
+      logFilter = f;
+      document.querySelectorAll('.lf-btn').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      renderLog();
+    }
+    function clearLog() { logCache = []; renderLog(); }
 
     // ── NAMED PIPE
-    async function sendPipe() {
-      const val = document.getElementById('pipeIn').value; if (!val) return;
-      pop('pipe-pkt');
-      const res = await API('/api/pipe/send', { token: sessionToken, message: val });
-      if (res && res.success) document.getElementById('pipeIn').value = '';
+    async function pipeSend() {
+      const msg = document.getElementById('pipe-input').value.trim();
+      if (!msg) { toast('Enter a message first', 'wa'); return; }
+      const r = await api('/api/pipe/send', 'POST', { token: TOKEN, message: msg });
+      if (r.success) {
+        addPipeMsg(msg, 'out');
+        document.getElementById('pipe-input').value = '';
+        toast('Message sent through pipe', 'ok');
+      } else toast('Send failed', 'er');
     }
-    async function recvPipe() {
-      const res = await API('/api/pipe/receive', { token: sessionToken });
-      if (res && res.message) logTo('pipeOut', res.message);
-      else logTo('pipeOut', "(Buffer empty)");
+    async function pipeRecv() {
+      const r = await api('/api/pipe/receive', 'POST', { token: TOKEN });
+      if (r.message) { addPipeMsg(r.message, 'in'); toast('Message received from pipe', 'ok'); }
+      else toast('Pipe buffer is empty', 'wa');
+    }
+    function addPipeMsg(text, dir) {
+      const log = document.getElementById('pipe-log');
+      if (log.querySelector('.log-empty')) log.innerHTML = '';
+      const t = new Date().toLocaleTimeString('en', { hour12: false });
+      const d = document.createElement('div');
+      d.className = 'msg-entry';
+      d.innerHTML = `<span class="msg-dir dir-${dir}">${dir === 'out' ? 'OUT' : 'IN'}</span><span class="msg-txt">${text}</span><span class="msg-ts">${t}</span>`;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
     }
 
-    // ── MESSAGE QUEUE
-    async function sendQueue() {
-      const val = document.getElementById('queueIn').value; if (!val) return;
-      pop('queue-pkt');
-      const res = await API('/api/queue/send', { token: sessionToken, message: val });
-      if (res && res.success) document.getElementById('queueIn').value = '';
+    // ── QUEUE
+    async function queueSend() {
+      const msg = document.getElementById('queue-input').value.trim();
+      if (!msg) { toast('Enter a message first', 'wa'); return; }
+      const r = await api('/api/queue/send', 'POST', { token: TOKEN, message: msg });
+      if (r.success) {
+        qLocal.push({ msg, t: new Date().toLocaleTimeString('en', { hour12: false }) });
+        renderQ();
+        document.getElementById('queue-input').value = '';
+        toast('Enqueued to mailslot', 'ok');
+      } else toast('Enqueue failed', 'er');
     }
-    async function recvQueue() {
-      const res = await API('/api/queue/receive', { token: sessionToken });
-      if (res && res.message) logTo('queueOut', res.message);
-      else logTo('queueOut', "(Queue empty)");
+    async function queueRecv() {
+      const r = await api('/api/queue/receive', 'POST', { token: TOKEN });
+      if (r.message) {
+        if (qLocal.length) qLocal.shift();
+        renderQ();
+        toast(`Dequeued: "${r.message}"`, 'ok');
+      } else toast('Queue is empty', 'wa');
+    }
+    function renderQ() {
+      const v = document.getElementById('queue-viz');
+      if (!qLocal.length) { v.innerHTML = '<div class="log-empty">Queue is empty</div>'; return; }
+      v.innerHTML = qLocal.map((item, i) =>
+        `<div class="q-item"><span class="q-num">#${i + 1}</span><span class="q-msg">${item.msg}</span><span class="q-ts">${item.t}</span></div>`
+      ).join('');
     }
 
     // ── SHARED MEMORY
-    async function writeShm() {
-      const val = document.getElementById('shmIn').value; if (!val) return;
-      const res = await API('/api/shm/write', { token: sessionToken, data: val });
-      if (res && res.success) {
-        document.getElementById('shmIn').value = '';
-        logTo('shmOut', "(Address memory mutated - you must Read it to see changes)");
-      }
+    async function shmWrite() {
+      const data = document.getElementById('shm-input').value.trim();
+      if (!data) { toast('Enter data to write', 'wa'); return; }
+      const r = await api('/api/shm/write', 'POST', { token: TOKEN, data });
+      if (r.success) {
+        renderMem(data);
+        document.getElementById('shm-input').value = '';
+        document.getElementById('shm-lock-state').textContent = 'FREE';
+        document.getElementById('shm-lock-state').style.color = 'var(--green)';
+        toast('Written to shared memory', 'ok');
+      } else toast('Write failed', 'er');
     }
-    async function readShm() {
-      const res = await API('/api/shm/read', { token: sessionToken });
-      if (res && res.data) logTo('shmOut', res.data);
-      else logTo('shmOut', "(Uninitialized)");
+    async function shmRead() {
+      document.getElementById('shm-lock-state').textContent = 'LOCKED';
+      document.getElementById('shm-lock-state').style.color = 'var(--yellow)';
+      const r = await api('/api/shm/read', 'POST', { token: TOKEN });
+      setTimeout(() => {
+        document.getElementById('shm-lock-state').textContent = 'FREE';
+        document.getElementById('shm-lock-state').style.color = 'var(--green)';
+      }, 300);
+      if (r.data) { renderMem(r.data); toast('Shared memory read complete', 'ok'); }
+      else toast('Memory is empty', 'wa');
+    }
+    function renderMem(data) {
+      document.getElementById('shm-data-disp').textContent = data || '— empty —';
+      document.getElementById('shm-size').textContent = data.length + ' bytes used';
+      const hex = Array.from(data).slice(0, 32).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' ');
+      document.getElementById('shm-hex').textContent = 'hex: ' + hex + (data.length > 32 ? '...' : '');
     }
 
+    // ── SECURITY TESTS
+    async function testUnauth() {
+      toast('Checking OS access control...', 'in');
+      const r = await api('/api/test_unauthorized');
+      const box = document.getElementById('sec-result');
+      box.style.display = 'block';
+      if (r.success) {
+        box.style.color = 'var(--yellow)';
+        box.innerHTML = `⛔ <strong style="color:var(--red)">Kernel Blocked Access</strong>\n\nError Code : ${r.error_code}\nError      : ${r.error_msg}\n\nAn anonymous process tried to open the named pipe.\nThe DACL has no ACE for anonymous — kernel returned\nERROR_ACCESS_DENIED before any user code ran.`;
+        toast('OS blocked access — code ' + r.error_code, 'wa');
+      } else { box.innerHTML = 'Check failed'; toast('Check failed', 'er'); }
+    }
+    async function testAuth() {
+      toast('Opening OS security dialog...', 'in');
+      const r = await api('/api/authorize_access');
+      const box = document.getElementById('sec-result');
+      box.style.display = 'block';
+      if (r.granted) {
+        box.style.color = 'var(--green)';
+        box.innerHTML = `✅ <strong style="color:var(--green)">OS User Granted Kernel Override</strong>\n\n${r.msg}`;
+        toast('Override authorized', 'ok');
+      } else {
+        box.style.color = 'var(--red)';
+        box.innerHTML = `🚫 <strong style="color:var(--red)">Override Rejected by OS User</strong>\n\n${r.msg}`;
+        toast('Override denied', 'wa');
+      }
+    }
+
+    // ── THEME TOGGLE
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light');
+      const btn = document.getElementById('theme-toggle');
+      btn.textContent = isLight ? '🌙 Dark Mode' : '☀️ Light Mode';
+      localStorage.setItem('ipc-theme', isLight ? 'light' : 'dark');
+    }
+
+    // ── BOOT
+    async function init() {
+      // Restore saved theme
+      if (localStorage.getItem('ipc-theme') === 'light') {
+        document.body.classList.add('light');
+        const btn = document.getElementById('theme-toggle');
+        if (btn) btn.textContent = '🌙 Dark Mode';
+      }
+      await loadSysinfo();
+      await api('/api/start_services', 'POST', { token: TOKEN });
+      await pollStats();
+      await pollLog();
+      toast('All IPC channels active', 'ok');
+      setInterval(pollStats, 2000);
+      setInterval(pollLog, 1500);
+      setInterval(tick, 1000);
+      tick();
+    }
+    document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 
